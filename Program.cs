@@ -43,12 +43,16 @@ foreach (XmlNode node in xmlNodes)
         // You have to create the folder
         string destinationFile = DestinationFolder + link.Replace("/bingImages/", "");
 
-        if (File.Exists(destinationFile)) continue;
+        if (File.Exists(destinationFile))
+        {
+            Console.WriteLine($"Already downloaded... '{downloadLink}'");
+            continue;
+        }
 
         var uri = new Uri(downloadLink);
 
         await client.DownloadFileTaskAsync(uri, destinationFile);
-        Console.WriteLine("File downloaded... '{0}'", downloadLink);
+        Console.WriteLine($"File downloaded... '{downloadLink}'");
     }
 }
 
@@ -56,10 +60,16 @@ public static class HttpClientExtension
 {
     public static async Task DownloadFileTaskAsync(this HttpClient client, Uri uri, string fileName)
     {
-        Stream stream = await client.GetStreamAsync(uri);
+        try
+        {
+            Stream stream = await client.GetStreamAsync(uri);
+            var fileStream = new FileStream(fileName, FileMode.CreateNew);
+            await stream.CopyToAsync(fileStream);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
         
-        var fileStream = new FileStream(fileName, FileMode.CreateNew);
-        
-        await stream.CopyToAsync(fileStream);
     }
 }
